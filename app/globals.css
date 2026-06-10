@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --color-saku-50: #f0faf7;
+  --color-saku-100: #d8f2ea;
+  --color-saku-600: #0e7c66;
+  --color-saku-700: #0a5f4f;
+  --color-saku-900: #0b3d36;
+  --color-saku-950: #06241f;
+  --color-amber-brand: #f5a623;
+  --color-cream: #faf7f1;
+  --font-display: "Georgia", "Times New Roman", serif;
+  --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-cream);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
