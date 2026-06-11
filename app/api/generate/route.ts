@@ -10,7 +10,15 @@ export const runtime = "nodejs";
 // Vercel: allow long generations (requires Fluid Compute / Pro for >60s)
 export const maxDuration = 300;
 
-const client = new Anthropic();
+// Routed through Vercel AI Gateway (Anthropic Messages API-compatible endpoint).
+// Set AI_GATEWAY_API_KEY in your env / Vercel Project Settings.
+const client = new Anthropic({
+  apiKey: process.env.AI_GATEWAY_API_KEY,
+  baseURL: process.env.AI_GATEWAY_BASE_URL ?? "https://ai-gateway.vercel.sh",
+});
+
+// Gateway model ids use the "creator/model" format (dotted version).
+const MODEL = process.env.AI_MODEL ?? "anthropic/claude-opus-4.8";
 
 function badRequest(message: string) {
   return Response.json({ error: message }, { status: 400 });
@@ -35,7 +43,7 @@ export async function POST(req: Request) {
   }
 
   const stream = client.messages.stream({
-    model: "claude-opus-4-8",
+    model: MODEL,
     max_tokens: 64000,
     thinking: { type: "adaptive" },
     system: [

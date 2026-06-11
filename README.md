@@ -14,14 +14,14 @@ Isi data usaha → pilih jenis konten → AI menghasilkan konten Bahasa Indonesi
 
 - **Next.js 15** (App Router) + **TypeScript**
 - **Tailwind CSS v4**
-- **Anthropic TypeScript SDK** — model `claude-opus-4-8`, adaptive thinking, streaming response
+- **Vercel AI Gateway** (endpoint Anthropic Messages API-compatible) via **Anthropic TypeScript SDK** — model `anthropic/claude-opus-4.8`, adaptive thinking, streaming response
 - Desktop & mobile friendly (responsive)
 
 ## Menjalankan Lokal
 
 ```bash
 npm install
-cp .env.example .env   # isi ANTHROPIC_API_KEY
+cp .env.example .env   # isi AI_GATEWAY_API_KEY
 npm run dev
 ```
 
@@ -31,9 +31,13 @@ Buka http://localhost:3000.
 
 1. Push repo ini ke GitHub.
 2. Di [vercel.com](https://vercel.com) → **Add New Project** → import repo ini. Framework terdeteksi otomatis (Next.js).
-3. Di **Settings → Environment Variables**, tambahkan:
-   - `ANTHROPIC_API_KEY` = API key dari [platform.claude.com](https://platform.claude.com)
-4. Deploy. Selesai ✅
+3. Buat API key di **Vercel Dashboard → AI Gateway → API Keys**.
+4. Di **Settings → Environment Variables**, tambahkan:
+   - `AI_GATEWAY_API_KEY` = API key dari AI Gateway
+   - *(opsional)* `AI_MODEL` = `anthropic/claude-opus-4.8` — ganti kalau mau model lain
+5. Deploy. Selesai ✅
+
+> Aplikasi memanggil Anthropic **lewat Vercel AI Gateway** (`https://ai-gateway.vercel.sh`), jadi dapat observability, spend limit, dan fallback bawaan Vercel. Model id pakai format `creator/model` (mis. `anthropic/claude-opus-4.8`).
 
 > Catatan: route `/api/generate` memakai `maxDuration = 300` untuk generasi panjang (kalender 30 hari). Di plan Hobby, fungsi dibatasi lebih pendek — kalau generasi panjang terpotong, upgrade ke Pro atau aktifkan Fluid Compute.
 
@@ -42,7 +46,7 @@ Buka http://localhost:3000.
 ```
 app/
   page.tsx               → UI form + panel hasil (client, streaming fetch)
-  api/generate/route.ts  → POST: validasi input → Anthropic messages.stream()
+  api/generate/route.ts  → POST: validasi input → messages.stream() via AI Gateway
                            → ReadableStream teks ke browser
 lib/
   content-types.ts       → definisi 5 jenis konten + system prompt Bahasa Indonesia
