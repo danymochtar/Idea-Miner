@@ -58,7 +58,12 @@ export type ContentTypeId =
   | "kalender"
   | "reels"
   | "iklan"
-  | "dm";
+  | "dm"
+  | "bio"
+  | "review"
+  | "promo"
+  | "tagline"
+  | "blast";
 
 export interface ContentType {
   id: ContentTypeId;
@@ -126,7 +131,129 @@ Buat template untuk 6 situasi: (1) tanya harga, (2) tanya ongkir/pengiriman, (3)
 Setiap template harus terdengar manusiawi (bukan robot), sesuai tone yang diminta, dan mengarahkan ke closing.
 Beri label tiap template: [TEMPLATE — Situasi].`,
   },
+  {
+    id: "bio",
+    label: "Bio / Profil Usaha",
+    description: "Bio Instagram/TikTok + paragraf 'About Us' siap pakai",
+    emoji: "📇",
+    instruction: `Buatkan materi profil usaha ini:
+1. [BIO INSTAGRAM] — 3 opsi bio singkat (maksimal 150 karakter) dengan emoji, value proposition jelas, dan CTA/link.
+2. [BIO TIKTOK] — 2 opsi bio pendek yang catchy.
+3. [ABOUT US] — 1 paragraf "Tentang Kami" yang hangat dan meyakinkan untuk website/katalog (3-4 kalimat).
+4. [TAGLINE] — 3 opsi tagline singkat yang mudah diingat.`,
+  },
+  {
+    id: "review",
+    label: "Balasan Review",
+    description: "Balasan untuk review positif & komplain negatif",
+    emoji: "⭐",
+    instruction: `Buatkan template balasan review/ulasan pelanggan untuk usaha ini.
+Buat untuk situasi berikut:
+[REVIEW BINTANG 5] — 3 variasi balasan untuk review positif (ucapan terima kasih + ajakan repeat order).
+[REVIEW NETRAL/3 BINTANG] — 2 variasi balasan yang apresiatif sekaligus menggali masukan.
+[REVIEW NEGATIF/KOMPLAIN] — 3 variasi balasan yang empati, minta maaf, menawarkan solusi, dan menjaga nama baik usaha — TANPA terkesan defensif.
+Semua balasan harus profesional, manusiawi, dan sesuai tone yang diminta.`,
+  },
+  {
+    id: "promo",
+    label: "Ide Promo & Diskon",
+    description: "5 konsep campaign promo yang menjual",
+    emoji: "🎁",
+    instruction: `Buatkan 5 ide promo/campaign untuk usaha ini yang menarik dan realistis dijalankan UMKM.
+Format tiap ide:
+[PROMO N — Nama Campaign yang catchy]
+- Mekanik: cara kerja promonya (mis. bundling, diskon, BOGO, flash sale, giveaway)
+- Hook: kalimat promosi utama untuk medsos
+- Target & momen: kapan/ke siapa promo ini paling cocok (mis. payday, weekend, hari besar)
+- Estimasi dampak: kenapa promo ini bisa naikkan penjualan
+Variasikan jenis promonya, jangan semua diskon.`,
+  },
+  {
+    id: "tagline",
+    label: "Nama Produk & Tagline",
+    description: "Opsi nama produk/menu + slogan",
+    emoji: "🏷️",
+    instruction: `Bantu usaha ini menamai produk/menu dan membuat slogan.
+Hasilkan:
+[NAMA PRODUK] — 10 opsi nama produk/menu yang menarik, mudah diingat, dan relevan dengan usaha. Beri 1 baris alasan singkat per nama.
+[SLOGAN/TAGLINE] — 5 opsi tagline singkat yang kuat.
+[NAMA PAKET/BUNDLE] — 3 opsi nama paket bundling yang menggugah.
+Sesuaikan gaya penamaan dengan target pasar dan tone usaha.`,
+  },
+  {
+    id: "blast",
+    label: "Blast WhatsApp",
+    description: "3 pesan broadcast WA untuk promo & follow-up",
+    emoji: "📢",
+    instruction: `Buatkan 3 pesan broadcast WhatsApp (WA Blast) untuk usaha ini.
+Variasikan tujuannya:
+[BLAST 1 — Promo/Penawaran] — umumkan promo atau produk baru.
+[BLAST 2 — Reminder/Follow-up] — ingatkan pelanggan lama untuk repeat order.
+[BLAST 3 — Info/Edukasi] — kabar/tips bermanfaat yang halus mengarah ke jualan.
+Setiap pesan harus: pembuka personal (mis. "Halo Kak 👋"), isi ringkas mudah dibaca di HP, ada CTA jelas (link/format order), dan tidak terkesan spam. Panjang pas untuk WA (tidak terlalu panjang).`,
+  },
 ];
+
+export interface RefineAction {
+  id: string;
+  label: string;
+  emoji: string;
+  instruction: string;
+}
+
+// Quick one-tap tweaks applied to an already-generated result.
+export const REFINE_ACTIONS: RefineAction[] = [
+  {
+    id: "pendek",
+    label: "Lebih pendek",
+    emoji: "✂️",
+    instruction:
+      "Buat versi yang lebih singkat dan padat, langsung ke poin, tanpa menghilangkan inti pesan.",
+  },
+  {
+    id: "emoji",
+    label: "Tambah emoji",
+    emoji: "✨",
+    instruction:
+      "Tambahkan emoji yang relevan dan menarik di tempat yang pas agar lebih hidup, tapi jangan berlebihan.",
+  },
+  {
+    id: "formal",
+    label: "Lebih formal",
+    emoji: "🎩",
+    instruction:
+      "Ubah gaya bahasa menjadi lebih formal, sopan, dan profesional.",
+  },
+  {
+    id: "santai",
+    label: "Lebih santai",
+    emoji: "😎",
+    instruction:
+      "Ubah gaya bahasa menjadi lebih santai, akrab, dan friendly.",
+  },
+  {
+    id: "variasi",
+    label: "Versi lain",
+    emoji: "🔀",
+    instruction:
+      "Buat versi alternatif yang benar-benar berbeda pendekatannya, dengan angle dan pilihan kata yang baru.",
+  },
+];
+
+export function buildRefinePrompt(
+  previousOutput: string,
+  instruction: string,
+): string {
+  return `Berikut konten yang sudah dibuat sebelumnya:
+
+"""
+${previousOutput}
+"""
+
+Tugas: ${instruction}
+
+Pertahankan bahasa, format, dan struktur label yang sama seperti konten asli. Langsung keluarkan hasil revisinya saja, tanpa kalimat pembuka.`;
+}
 
 export interface GenerateRequest {
   businessName: string;

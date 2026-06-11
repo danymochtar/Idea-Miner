@@ -1,11 +1,19 @@
 import Anthropic from "@anthropic-ai/sdk";
 import {
+  buildRefinePrompt,
   buildUserPrompt,
   CONTENT_TYPES,
   LANGUAGE_STYLES,
+  REFINE_ACTIONS,
   SYSTEM_PROMPT,
   type GenerateRequest,
 } from "@/lib/content-types";
+
+interface GenerateBody extends Partial<GenerateRequest> {
+  // Refine mode: tweak an already-generated result.
+  refine?: string; // a REFINE_ACTIONS id
+  previousOutput?: string;
+}
 
 export const runtime = "nodejs";
 // Vercel: allow long generations (requires Fluid Compute / Pro for >60s)
@@ -46,22 +54,51 @@ function inlineErrorMessage(error: unknown): string {
 }
 
 export async function POST(req: Request) {
-  let body: GenerateRequest;
+  let body: GenerateBody;
   try {
     body = await req.json();
   } catch {
     return badRequest("Body harus berupa JSON.");
   }
 
-  const { businessName, niche, description, tone, contentType, language } =
-    body;
-  if (!businessName?.trim()) return badRequest("Nama usaha wajib diisi.");
-  if (!description?.trim()) return badRequest("Deskripsi usaha wajib diisi.");
-  if (!CONTENT_TYPES.some((c) => c.id === contentType)) {
-    return badRequest("Jenis konten tidak valid.");
-  }
-  if (businessName.length > 200 || description.length > 2000) {
-    return badRequest("Input terlalu panjang.");
+  let userPrompt: string;
+
+  if (body.refine) {
+    // ---- Refine mode ----
+    const action = REFINE_ACTIONS.find((a) => a.id === body.refine);
+    if (!action) return badRequest("Aksi refine tidak valid.");
+    if (!body.previousOutput?.trim()) {
+      return badRequest("Tidak ada konten untuk direvisi.");
+    }
+    if (body.previousOutput.length > 40000) {
+      return badRequest("Konten terlalu panjang untuk direvisi.");
+    }
+    userPrompt = buildRefinePrompt(
+      body.previousOutput.trim(),
+      action.instruction,
+    );
+  } else {
+    // ---- Generate mode ----
+    const { businessName, niche, description, tone, contentType, language } =
+      body;
+    if (!businessName?.trim()) return badRequest("Nama usaha wajib diisi.");
+    if (!description?.trim()) return badRequest("Deskripsi usaha wajib diisi.");
+    if (!CONTENT_TYPES.some((c) => c.id === contentType)) {
+      return badRequest("Jenis konten tidak valid.");
+    }
+    if (businessName.length > 200 || description.length > 2000) {
+      return badRequest("Input terlalu panjang.");
+    }
+    userPrompt = buildUserPrompt({
+      businessName: businessName.trim(),
+      niche: niche?.trim() || "Umum",
+      description: description.trim(),
+      tone: tone?.trim() || "Santai & Friendly",
+      contentType: contentType!,
+      language: LANGUAGE_STYLES.some((l) => l.id === language)
+        ? language!
+        : "santai",
+    });
   }
 
   if (!process.env.AI_GATEWAY_API_KEY) {
@@ -81,21 +118,7 @@ export async function POST(req: Request) {
         cache_control: { type: "ephemeral" },
       },
     ],
-    messages: [
-      {
-        role: "user",
-        content: buildUserPrompt({
-          businessName: businessName.trim(),
-          niche: niche?.trim() || "Umum",
-          description: description.trim(),
-          tone: tone?.trim() || "Santai & Friendly",
-          contentType,
-          language: LANGUAGE_STYLES.some((l) => l.id === language)
-            ? language
-            : "santai",
-        }),
-      },
-    ],
+    messages: [{ role: "user", content: userPrompt }],
   });
 
   const encoder = new TextEncoder();

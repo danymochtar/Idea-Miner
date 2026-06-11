@@ -4,18 +4,22 @@ Pilot project **Saku Media** — web app pembuat konten medsos untuk UMKM Indone
 
 Isi data usaha → pilih jenis konten → AI menghasilkan konten Bahasa Indonesia siap copy-paste:
 
-- ✍️ **Caption Jualan** — 5 caption IG/TikTok + hashtag
-- 📅 **Kalender Konten 30 Hari** — rencana sebulan dengan 3 pilar konten
-- 🎬 **Script Reels/TikTok** — 3 script video pendek (hook, isi, CTA)
-- 🎯 **Copy Iklan** — 3 variasi copy Meta/TikTok Ads (PAS, AIDA, testimoni)
-- 💬 **Template Balasan DM/WA** — 6 situasi chat penjualan
+**10 jenis konten:**
 
-Plus:
+- ✍️ Caption Jualan · 📅 Kalender Konten 30 Hari · 🎬 Script Reels/TikTok · 🎯 Copy Iklan (PAS/AIDA/testimoni) · 💬 Template Balasan DM/WA
+- 📇 Bio/Profil Usaha · ⭐ Balasan Review · 🎁 Ide Promo & Diskon · 🏷️ Nama Produk & Tagline · 📢 Blast WhatsApp
 
+**Fitur platform:**
+
+- 🔁 **Refine 1-tap** — sesuaikan hasil: lebih pendek, tambah emoji, lebih formal/santai, atau buat versi lain
+- 💼 **Brand Profile** — simpan profil usaha (cocok untuk agensi yang pegang banyak klien), pakai ulang sekali klik
 - 🚀 **Preset 1-klik** — contoh usaha (Kedai Kopi, Online Shop, Properti, Coach) untuk demo cepat
 - 🗣️ **Gaya bahasa** — Indonesia santai/formal, gaul Jaksel, atau campur Jawa/Sunda
-- ↓ **Download** hasil sebagai `.txt` / `.md`, atau salin sekali klik
-- 🕘 **Riwayat** generate tersimpan di browser (localStorage), bisa dibuka lagi
+- ↓ **Download** hasil `.txt` / `.md` + salin sekali klik
+- 🕘 **Riwayat** generate tersimpan di browser, bisa dibuka lagi
+- 💳 **Tier Free/Pro** — meter kuota harian + modal upgrade (Saku Klub Konten, Rp 49rb/bln)
+
+> Catatan: meter kuota & status Pro saat ini **client-side (localStorage)** untuk demo pilot — belum ada enforcement server / payment. Untuk produksi, pindahkan ke auth + DB + payment (mis. Lynk.id/Mayar) dan rate-limit per-akun di server.
 
 ## Tech Stack
 
