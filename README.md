@@ -11,8 +11,9 @@ Isi data usaha → pilih jenis konten → AI menghasilkan konten Bahasa Indonesi
 
 **🎨 Logo Maker** (halaman `/logo`):
 
-- AI bikin **3 konsep logo SVG** dari nama usaha + gaya (Minimalis, Playful, Elegan, Vintage, Bold)
-- Hasil vektor (tajam di ukuran apa pun), unduh `.svg` per konsep, atau "buat 3 konsep lain"
+- Brief lengkap ala desainer pro: **nama, deskripsi usaha, target pasar, jenis logo** (wordmark/monogram/ikon+teks/emblem/maskot), **nuansa warna**, gaya, + catatan "harus ada/dihindari"
+- Prompt menerapkan prinsip desain logo (sederhana, mudah diingat, relevan, scalable, jalan di 1 warna) & hindari klise/AI-slop
+- AI bikin **3 konsep logo SVG** berbeda pendekatan; hasil vektor (tajam di ukuran apa pun), unduh `.svg` per konsep, atau "buat 3 konsep lain"
 - Aman: SVG di-sanitasi server (buang `<script>`/handler) **dan** di-render via `<img>` data-URL (browser menonaktifkan script)
 
 **Fitur platform:**

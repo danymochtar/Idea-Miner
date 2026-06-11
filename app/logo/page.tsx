@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import Nav from "@/components/Nav";
-import { LOGO_STYLES, NICHES_FALLBACK } from "@/lib/logo-client";
+import {
+  COLOR_MOODS,
+  LOGO_STYLES,
+  LOGO_TYPES,
+  NICHES_FALLBACK,
+} from "@/lib/logo-client";
 
 function svgToDataUrl(svg: string): string {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
@@ -11,7 +16,12 @@ function svgToDataUrl(svg: string): string {
 export default function LogoMaker() {
   const [businessName, setBusinessName] = useState("");
   const [niche, setNiche] = useState<string>(NICHES_FALLBACK[0]);
+  const [description, setDescription] = useState("");
+  const [target, setTarget] = useState("");
   const [style, setStyle] = useState<string>(LOGO_STYLES[0].id);
+  const [logoType, setLogoType] = useState<string>(LOGO_TYPES[0].id);
+  const [colorMood, setColorMood] = useState<string>(COLOR_MOODS[0].id);
+  const [notes, setNotes] = useState("");
 
   const [logos, setLogos] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -26,7 +36,16 @@ export default function LogoMaker() {
       const res = await fetch("/api/logo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ businessName, niche, style }),
+        body: JSON.stringify({
+          businessName,
+          niche,
+          description,
+          target,
+          style,
+          logoType,
+          colorMood,
+          notes,
+        }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
@@ -131,6 +150,63 @@ export default function LogoMaker() {
               </select>
             </label>
 
+            <label className="mt-4 block text-sm font-medium text-saku-900">
+              Deskripsi usaha
+              <textarea
+                required
+                maxLength={2000}
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Jualan apa, apa keunggulannya, kesan/karakter yang diinginkan…"
+                className="mt-1 w-full resize-y rounded-lg border border-saku-900/15 bg-cream px-3 py-2.5 text-sm outline-none focus:border-saku-600 focus:ring-2 focus:ring-saku-100"
+              />
+            </label>
+
+            <label className="mt-4 block text-sm font-medium text-saku-900">
+              Target pasar{" "}
+              <span className="font-normal text-saku-900/40">(opsional)</span>
+              <input
+                maxLength={200}
+                value={target}
+                onChange={(e) => setTarget(e.target.value)}
+                placeholder="contoh: anak muda 18–25, ibu rumah tangga…"
+                className="mt-1 w-full rounded-lg border border-saku-900/15 bg-cream px-3 py-2.5 text-sm outline-none focus:border-saku-600 focus:ring-2 focus:ring-saku-100"
+              />
+            </label>
+
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <label className="block text-sm font-medium text-saku-900">
+                Jenis logo
+                <select
+                  value={logoType}
+                  onChange={(e) => setLogoType(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-saku-900/15 bg-cream px-3 py-2.5 text-sm outline-none focus:border-saku-600 focus:ring-2 focus:ring-saku-100"
+                >
+                  {LOGO_TYPES.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block text-sm font-medium text-saku-900">
+                Nuansa warna
+                <select
+                  value={colorMood}
+                  onChange={(e) => setColorMood(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-saku-900/15 bg-cream px-3 py-2.5 text-sm outline-none focus:border-saku-600 focus:ring-2 focus:ring-saku-100"
+                >
+                  {COLOR_MOODS.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
             <p className="mt-5 text-sm font-medium text-saku-900">Gaya logo</p>
             <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
               {LOGO_STYLES.map((s) => (
@@ -153,6 +229,18 @@ export default function LogoMaker() {
                 </button>
               ))}
             </div>
+
+            <label className="mt-4 block text-sm font-medium text-saku-900">
+              Harus ada / dihindari{" "}
+              <span className="font-normal text-saku-900/40">(opsional)</span>
+              <input
+                maxLength={300}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="contoh: ada gambar cangkir kopi; hindari warna merah"
+                className="mt-1 w-full rounded-lg border border-saku-900/15 bg-cream px-3 py-2.5 text-sm outline-none focus:border-saku-600 focus:ring-2 focus:ring-saku-100"
+              />
+            </label>
 
             <button
               type="submit"

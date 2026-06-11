@@ -21,7 +21,12 @@ function getClient(): Anthropic {
 interface LogoBody {
   businessName?: string;
   niche?: string;
+  description?: string;
+  target?: string;
   style?: string;
+  logoType?: string;
+  colorMood?: string;
+  notes?: string;
 }
 
 export async function POST(req: Request) {
@@ -36,8 +41,15 @@ export async function POST(req: Request) {
   if (!businessName) {
     return Response.json({ error: "Nama usaha wajib diisi." }, { status: 400 });
   }
-  if (businessName.length > 200) {
-    return Response.json({ error: "Nama usaha terlalu panjang." }, { status: 400 });
+  const description = body.description?.trim();
+  if (!description) {
+    return Response.json(
+      { error: "Deskripsi usaha wajib diisi." },
+      { status: 400 },
+    );
+  }
+  if (businessName.length > 200 || description.length > 2000) {
+    return Response.json({ error: "Input terlalu panjang." }, { status: 400 });
   }
 
   const style =
@@ -58,11 +70,16 @@ export async function POST(req: Request) {
       messages: [
         {
           role: "user",
-          content: buildLogoPrompt(
+          content: buildLogoPrompt({
             businessName,
-            body.niche?.trim() || "Umum",
-            `${style.label} — ${style.hint}`,
-          ),
+            niche: body.niche?.trim() || "Umum",
+            description,
+            target: body.target,
+            styleHint: `${style.label} — ${style.hint}`,
+            typeId: body.logoType,
+            colorId: body.colorMood,
+            notes: body.notes,
+          }),
         },
       ],
     });
