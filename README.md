@@ -13,8 +13,11 @@ Isi data usaha → pilih jenis konten → AI menghasilkan konten Bahasa Indonesi
 
 - Brief lengkap ala desainer pro: **nama, deskripsi usaha, target pasar, jenis logo** (wordmark/monogram/ikon+teks/emblem/maskot), **nuansa warna**, gaya, + catatan "harus ada/dihindari"
 - Prompt menerapkan prinsip desain logo (sederhana, mudah diingat, relevan, scalable, jalan di 1 warna) & hindari klise/AI-slop
-- AI bikin **3 konsep logo SVG** berbeda pendekatan; hasil vektor (tajam di ukuran apa pun), unduh `.svg` per konsep, atau "buat 3 konsep lain"
+- AI bikin **3 konsep logo SVG** berbeda pendekatan, masing-masing dengan **penjelasan filosofi/makna**; hasil vektor (tajam di ukuran apa pun), unduh `.svg` per konsep, atau "buat 3 konsep lain"
+- Kualitas dinaikkan lewat **adaptive thinking + effort tinggi** (model "memikirkan" makna & komposisi dulu sebelum menggambar) — bisa pakai model paling pintar via `AI_LOGO_MODEL` (mis. `anthropic/claude-fable-5`)
 - Aman: SVG di-sanitasi server (buang `<script>`/handler) **dan** di-render via `<img>` data-URL (browser menonaktifkan script)
+
+> Kenapa SVG (bukan model gambar)? Logo butuh **vektor** (scalable, nama usaha tidak salah eja, bisa diedit). Model gambar (Flux/Imagen/Ideogram) menghasilkan raster yang lebih "cakep" tapi bukan logo siap pakai. Satu-satunya model gambar yang keluar SVG asli adalah Recraft V4 (API berbayar terpisah) — bisa diintegrasikan nanti bila perlu kualitas ilustratif.
 
 **Fitur platform:**
 

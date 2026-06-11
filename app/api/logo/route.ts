@@ -1,15 +1,20 @@
 import Anthropic from "@anthropic-ai/sdk";
 import {
   buildLogoPrompt,
-  extractSafeSvgs,
+  extractConcepts,
   LOGO_STYLES,
   LOGO_SYSTEM_PROMPT,
 } from "@/lib/logo";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 300;
 
-const MODEL = process.env.AI_MODEL ?? "anthropic/claude-opus-4.8";
+// Logos benefit from the most capable model + design reasoning. Configurable
+// separately from the content model (e.g. AI_LOGO_MODEL=anthropic/claude-fable-5).
+const MODEL =
+  process.env.AI_LOGO_MODEL ??
+  process.env.AI_MODEL ??
+  "anthropic/claude-opus-4.8";
 
 function getClient(): Anthropic {
   return new Anthropic({
@@ -63,9 +68,15 @@ export async function POST(req: Request) {
   }
 
   try {
-    const message = await getClient().messages.create({
+    // Streaming + finalMessage avoids the SDK's large-max_tokens timeout guard.
+    // output_config (effort) is a valid Messages API field; cast around SDK types.
+    const stream = getClient().messages.stream({
       model: MODEL,
-      max_tokens: 12000,
+      max_tokens: 32000,
+      // Let the model reason about brand meaning/composition before drawing —
+      // the biggest quality lever for "ciamik & filosofis" logos.
+      thinking: { type: "adaptive" },
+      output_config: { effort: "high" },
       system: LOGO_SYSTEM_PROMPT,
       messages: [
         {
@@ -82,14 +93,15 @@ export async function POST(req: Request) {
           }),
         },
       ],
-    });
+    } as Parameters<Anthropic["messages"]["stream"]>[0]);
 
+    const message = await stream.finalMessage();
     const text = message.content
       .filter((b) => b.type === "text")
       .map((b) => (b as { text: string }).text)
       .join("\n");
 
-    const logos = extractSafeSvgs(text);
+    const logos = extractConcepts(text);
     if (logos.length === 0) {
       return Response.json(
         { error: "Gagal membuat logo — coba lagi atau ganti gaya." },

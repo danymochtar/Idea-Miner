@@ -9,6 +9,11 @@ import {
   NICHES_FALLBACK,
 } from "@/lib/logo-client";
 
+interface LogoConcept {
+  philosophy: string;
+  svg: string;
+}
+
 function svgToDataUrl(svg: string): string {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
@@ -23,7 +28,7 @@ export default function LogoMaker() {
   const [colorMood, setColorMood] = useState<string>(COLOR_MOODS[0].id);
   const [notes, setNotes] = useState("");
 
-  const [logos, setLogos] = useState<string[]>([]);
+  const [logos, setLogos] = useState<LogoConcept[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -283,7 +288,7 @@ export default function LogoMaker() {
 
             {logos.length > 0 && (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {logos.map((svg, i) => (
+                {logos.map((concept, i) => (
                   <div
                     key={i}
                     className="flex flex-col rounded-2xl border border-saku-900/10 bg-white p-4 shadow-sm"
@@ -292,13 +297,21 @@ export default function LogoMaker() {
                       {/* SVG rendered via <img> → browser disables scripts (safe) */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={svgToDataUrl(svg)}
+                        src={svgToDataUrl(concept.svg)}
                         alt={`Konsep logo ${i + 1}`}
                         className="h-full w-full object-contain"
                       />
                     </div>
+                    {concept.philosophy && (
+                      <p className="mt-3 text-xs leading-relaxed text-saku-900/70">
+                        <span className="font-semibold text-saku-900">
+                          💡 Filosofi:
+                        </span>{" "}
+                        {concept.philosophy}
+                      </p>
+                    )}
                     <button
-                      onClick={() => downloadSvg(svg, i)}
+                      onClick={() => downloadSvg(concept.svg, i)}
                       className="mt-3 w-full rounded-lg bg-saku-600 px-3 py-2 text-xs font-semibold text-white hover:bg-saku-700"
                     >
                       ↓ Unduh SVG #{i + 1}
