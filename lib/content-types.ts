@@ -255,6 +255,13 @@ Tugas: ${instruction}
 Pertahankan bahasa, format, dan struktur label yang sama seperti konten asli. Langsung keluarkan hasil revisinya saja, tanpa kalimat pembuka.`;
 }
 
+export type OutputLang = "id" | "en";
+
+export const OUTPUT_LANGS: { id: OutputLang; label: string; flag: string }[] = [
+  { id: "id", label: "Indonesia", flag: "🇮🇩" },
+  { id: "en", label: "English", flag: "🇬🇧" },
+];
+
 export interface GenerateRequest {
   businessName: string;
   niche: string;
@@ -262,6 +269,7 @@ export interface GenerateRequest {
   tone: string;
   contentType: ContentTypeId;
   language: string;
+  outputLang: OutputLang;
 }
 
 export interface Preset {
@@ -323,7 +331,7 @@ export const PRESETS: Preset[] = [
   },
 ];
 
-export const SYSTEM_PROMPT = `Kamu adalah "Saku AI Konten Engine" — mesin konten dari Saku Media, agensi digital Indonesia yang membantu UMKM punya presence online yang kuat.
+const SYSTEM_PROMPT_ID = `Kamu adalah "Saku AI Konten Engine" — mesin konten dari Saku Media, agensi digital Indonesia yang membantu UMKM punya presence online yang kuat.
 
 Tugasmu: menghasilkan konten pemasaran dalam Bahasa Indonesia yang natural, persuasif, dan siap pakai untuk pemilik usaha kecil-menengah di Indonesia.
 
@@ -335,8 +343,35 @@ Aturan output:
 - Sebut nama usaha secara natural di dalam konten.
 - Akhiri output dengan satu baris "💡 Tips Saku:" berisi satu saran praktis memakai konten tersebut.`;
 
+const SYSTEM_PROMPT_EN = `You are "Saku AI Konten Engine" — the content engine of Saku Media, an Indonesian digital agency that helps small businesses build a strong online presence.
+
+Your task: produce natural, persuasive, ready-to-use marketing content in ENGLISH for small and medium business owners.
+
+Output rules:
+- Always write in fluent, natural English that matches the requested tone. Use everyday social-media language.
+- Content must be READY TO COPY-PASTE: don't explain theory, just produce the content.
+- Format as clean plain text: use bracketed labels, divider lines (───), and a few emojis for structure — do NOT use markdown tables or markdown syntax (#, **, |).
+- Match the writing style to the business's target market (e.g. a street-food stall vs a premium property differ in voice).
+- Mention the business name naturally within the content.
+- End the output with one line "💡 Saku Tip:" containing one practical tip for using the content.`;
+
+export function getSystemPrompt(lang: OutputLang): string {
+  return lang === "en" ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT_ID;
+}
+
 export function buildUserPrompt(req: GenerateRequest): string {
   const contentType = CONTENT_TYPES.find((c) => c.id === req.contentType);
+  if (req.outputLang === "en") {
+    return `Business data:
+- Business name: ${req.businessName}
+- Category: ${req.niche}
+- Business & product description: ${req.description}
+- Desired tone: ${req.tone}
+- Writing style: natural, fluent English suited to the target market.
+
+Request (produce all output in English):
+${contentType?.instruction ?? ""}`;
+  }
   const language = LANGUAGE_STYLES.find((l) => l.id === req.language);
   return `Data usaha:
 - Nama usaha: ${req.businessName}

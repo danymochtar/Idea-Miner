@@ -3,10 +3,11 @@ import {
   buildRefinePrompt,
   buildUserPrompt,
   CONTENT_TYPES,
+  getSystemPrompt,
   LANGUAGE_STYLES,
   REFINE_ACTIONS,
-  SYSTEM_PROMPT,
   type GenerateRequest,
+  type OutputLang,
 } from "@/lib/content-types";
 
 interface GenerateBody extends Partial<GenerateRequest> {
@@ -61,6 +62,7 @@ export async function POST(req: Request) {
     return badRequest("Body harus berupa JSON.");
   }
 
+  const outputLang: OutputLang = body.outputLang === "en" ? "en" : "id";
   let userPrompt: string;
 
   if (body.refine) {
@@ -98,6 +100,7 @@ export async function POST(req: Request) {
       language: LANGUAGE_STYLES.some((l) => l.id === language)
         ? language!
         : "santai",
+      outputLang,
     });
   }
 
@@ -114,7 +117,7 @@ export async function POST(req: Request) {
     system: [
       {
         type: "text",
-        text: SYSTEM_PROMPT,
+        text: getSystemPrompt(outputLang),
         cache_control: { type: "ephemeral" },
       },
     ],

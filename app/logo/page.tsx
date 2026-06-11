@@ -22,7 +22,7 @@ function svgToDataUrl(svg: string): string {
 }
 
 export default function LogoMaker() {
-  const [engine, setEngine] = useState<Engine>("svg");
+  const [engine, setEngine] = useState<Engine>("image");
   const [businessName, setBusinessName] = useState("");
   const [niche, setNiche] = useState<string>(NICHES_FALLBACK[0]);
   const [description, setDescription] = useState("");

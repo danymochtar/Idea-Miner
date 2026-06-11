@@ -6,10 +6,12 @@ import {
   CONTENT_TYPES,
   LANGUAGE_STYLES,
   NICHES,
+  OUTPUT_LANGS,
   PRESETS,
   REFINE_ACTIONS,
   TONES,
   type ContentTypeId,
+  type OutputLang,
   type Preset,
 } from "@/lib/content-types";
 
@@ -51,6 +53,7 @@ export default function Home() {
   const [tone, setTone] = useState<string>(TONES[0]);
   const [contentType, setContentType] = useState<ContentTypeId>("caption");
   const [language, setLanguage] = useState<string>(LANGUAGE_STYLES[0].id);
+  const [outputLang, setOutputLang] = useState<OutputLang>("id");
 
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -183,6 +186,7 @@ export default function Home() {
     setTone(p.tone);
     setContentType(p.contentType);
     setLanguage(p.language);
+    setOutputLang("id");
     setError(null);
   }
 
@@ -275,7 +279,15 @@ export default function Home() {
     let full = "";
     try {
       full = await streamInto(
-        { businessName, niche, description, tone, contentType, language },
+        {
+          businessName,
+          niche,
+          description,
+          tone,
+          contentType,
+          language,
+          outputLang,
+        },
         signal,
       );
       if (finalize(full)) {
@@ -306,7 +318,7 @@ export default function Home() {
     let full = "";
     try {
       full = await streamInto(
-        { refine: actionId, previousOutput: prev },
+        { refine: actionId, previousOutput: prev, outputLang },
         signal,
       );
       if (finalize(full)) {
@@ -529,6 +541,27 @@ export default function Home() {
               />
             </label>
 
+            {/* Output language */}
+            <div className="mt-4 text-sm font-medium text-saku-900">
+              Bahasa output
+              <div className="mt-1 grid grid-cols-2 gap-2 rounded-xl bg-cream p-1">
+                {OUTPUT_LANGS.map((o) => (
+                  <button
+                    key={o.id}
+                    type="button"
+                    onClick={() => setOutputLang(o.id)}
+                    className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                      outputLang === o.id
+                        ? "bg-saku-600 text-white shadow-sm"
+                        : "text-saku-900/70 hover:text-saku-900"
+                    }`}
+                  >
+                    {o.flag} {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <label className="block text-sm font-medium text-saku-900">
                 Tone konten
@@ -543,20 +576,22 @@ export default function Home() {
                 </select>
               </label>
 
-              <label className="block text-sm font-medium text-saku-900">
-                Gaya bahasa
-                <select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-saku-900/15 bg-cream px-3 py-2.5 text-sm outline-none focus:border-saku-600 focus:ring-2 focus:ring-saku-100"
-                >
-                  {LANGUAGE_STYLES.map((l) => (
-                    <option key={l.id} value={l.id}>
-                      {l.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {outputLang === "id" && (
+                <label className="block text-sm font-medium text-saku-900">
+                  Gaya bahasa
+                  <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-saku-900/15 bg-cream px-3 py-2.5 text-sm outline-none focus:border-saku-600 focus:ring-2 focus:ring-saku-100"
+                  >
+                    {LANGUAGE_STYLES.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
             </div>
 
             <p className="mt-5 text-sm font-medium text-saku-900">

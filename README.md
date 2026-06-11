@@ -29,7 +29,8 @@ Isi data usaha → pilih jenis konten → AI menghasilkan konten Bahasa Indonesi
 - 🔁 **Refine 1-tap** — sesuaikan hasil: lebih pendek, tambah emoji, lebih formal/santai, atau buat versi lain
 - 💼 **Brand Profile** — simpan profil usaha (cocok untuk agensi yang pegang banyak klien), pakai ulang sekali klik
 - 🚀 **Preset 1-klik** — contoh usaha (Kedai Kopi, Online Shop, Properti, Coach) untuk demo cepat
-- 🗣️ **Gaya bahasa** — Indonesia santai/formal, gaul Jaksel, atau campur Jawa/Sunda
+- 🌐 **Bahasa output** — Indonesia 🇮🇩 atau English 🇬🇧 (untuk semua jenis konten)
+- 🗣️ **Gaya bahasa** (mode Indonesia) — santai/formal, gaul Jaksel, atau campur Jawa/Sunda
 - ↓ **Download** hasil `.txt` / `.md` + salin sekali klik
 - 🕘 **Riwayat** generate tersimpan di browser, bisa dibuka lagi
 - 💳 **Tier Free/Pro** — meter kuota harian + modal upgrade (Saku Klub Konten, Rp 49rb/bln)
