@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CONTENT_TYPES,
   NICHES,
@@ -22,6 +22,17 @@ export default function Home() {
 
   const abortRef = useRef<AbortController | null>(null);
   const outputRef = useRef<HTMLDivElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Stick the output panel to the bottom while streaming — but only if the user
+  // hasn't scrolled up to re-read earlier content.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !loading) return;
+    const nearBottom =
+      el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    if (nearBottom) el.scrollTop = el.scrollHeight;
+  }, [output, loading]);
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -78,9 +89,13 @@ export default function Home() {
   }
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(output);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(output);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setError("Gagal menyalin — silakan blok teks dan salin manual.");
+    }
   }
 
   const selectedType = CONTENT_TYPES.find((c) => c.id === contentType);
@@ -257,7 +272,10 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-auto px-5 py-4 sm:px-6">
+            <div
+              ref={scrollRef}
+              className="flex-1 overflow-auto px-5 py-4 sm:px-6"
+            >
               {error && (
                 <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                   {error}

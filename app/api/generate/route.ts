@@ -10,18 +10,38 @@ export const runtime = "nodejs";
 // Vercel: allow long generations (requires Fluid Compute / Pro for >60s)
 export const maxDuration = 300;
 
-// Routed through Vercel AI Gateway (Anthropic Messages API-compatible endpoint).
-// Set AI_GATEWAY_API_KEY in your env / Vercel Project Settings.
-const client = new Anthropic({
-  apiKey: process.env.AI_GATEWAY_API_KEY,
-  baseURL: process.env.AI_GATEWAY_BASE_URL ?? "https://ai-gateway.vercel.sh",
-});
-
 // Gateway model ids use the "creator/model" format (dotted version).
 const MODEL = process.env.AI_MODEL ?? "anthropic/claude-opus-4.8";
 
-function badRequest(message: string) {
-  return Response.json({ error: message }, { status: 400 });
+// Routed through Vercel AI Gateway (Anthropic Messages API-compatible endpoint).
+// Constructed lazily so a missing key returns a clean 500 instead of crashing
+// the route module at import time (the SDK throws when apiKey is undefined).
+function getClient(): Anthropic {
+  return new Anthropic({
+    apiKey: process.env.AI_GATEWAY_API_KEY,
+    baseURL: process.env.AI_GATEWAY_BASE_URL ?? "https://ai-gateway.vercel.sh",
+  });
+}
+
+function jsonError(message: string, status: number) {
+  return Response.json({ error: message }, { status });
+}
+
+const badRequest = (message: string) => jsonError(message, 400);
+
+// Maps an error thrown after the stream has started (headers already sent) to a
+// friendly inline message — the only channel left is the response body.
+function inlineErrorMessage(error: unknown): string {
+  if (error instanceof Anthropic.AuthenticationError) {
+    return "\n\n[Gagal autentikasi ke AI Gateway — periksa AI_GATEWAY_API_KEY.]";
+  }
+  if (error instanceof Anthropic.NotFoundError) {
+    return `\n\n[Model "${MODEL}" tidak ditemukan di AI Gateway — set env AI_MODEL ke model yang tersedia.]`;
+  }
+  if (error instanceof Anthropic.RateLimitError) {
+    return "\n\n[Sistem sedang sibuk — coba lagi sebentar.]";
+  }
+  return "\n\n[Terjadi kesalahan saat membuat konten — coba lagi.]";
 }
 
 export async function POST(req: Request) {
@@ -42,10 +62,16 @@ export async function POST(req: Request) {
     return badRequest("Input terlalu panjang.");
   }
 
-  const stream = client.messages.stream({
+  if (!process.env.AI_GATEWAY_API_KEY) {
+    return jsonError(
+      "Server belum dikonfigurasi: AI_GATEWAY_API_KEY belum di-set.",
+      500,
+    );
+  }
+
+  const stream = getClient().messages.stream({
     model: MODEL,
     max_tokens: 64000,
-    thinking: { type: "adaptive" },
     system: [
       {
         type: "text",
@@ -58,9 +84,9 @@ export async function POST(req: Request) {
         role: "user",
         content: buildUserPrompt({
           businessName: businessName.trim(),
-          niche,
+          niche: niche?.trim() || "Umum",
           description: description.trim(),
-          tone,
+          tone: tone?.trim() || "Santai & Friendly",
           contentType,
         }),
       },
@@ -81,14 +107,11 @@ export async function POST(req: Request) {
         }
         controller.close();
       } catch (error) {
-        if (error instanceof Anthropic.RateLimitError) {
-          controller.enqueue(
-            encoder.encode("\n\n[Sistem sedang sibuk — coba lagi sebentar.]"),
-          );
-          controller.close();
-        } else {
-          controller.error(error);
-        }
+        // Headers are already sent, so surface the problem inline rather than
+        // erroring the stream (which would only show a generic browser error).
+        console.error("generate stream error:", error);
+        controller.enqueue(encoder.encode(inlineErrorMessage(error)));
+        controller.close();
       }
     },
     cancel() {

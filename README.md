@@ -14,7 +14,7 @@ Isi data usaha → pilih jenis konten → AI menghasilkan konten Bahasa Indonesi
 
 - **Next.js 15** (App Router) + **TypeScript**
 - **Tailwind CSS v4**
-- **Vercel AI Gateway** (endpoint Anthropic Messages API-compatible) via **Anthropic TypeScript SDK** — model `anthropic/claude-opus-4.8`, adaptive thinking, streaming response
+- **Vercel AI Gateway** (endpoint Anthropic Messages API-compatible) via **Anthropic TypeScript SDK** — model `anthropic/claude-opus-4.8`, streaming response (token pertama instan, tanpa thinking delay)
 - Desktop & mobile friendly (responsive)
 
 ## Menjalankan Lokal
