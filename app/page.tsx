@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Nav from "@/components/Nav";
 import {
   CONTENT_TYPES,
   LANGUAGE_STYLES,
@@ -400,6 +401,7 @@ export default function Home() {
           </div>
         </div>
       </header>
+      <Nav />
 
       {/* Hero */}
       <section className="bg-saku-900 text-white">

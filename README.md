@@ -9,6 +9,12 @@ Isi data usaha → pilih jenis konten → AI menghasilkan konten Bahasa Indonesi
 - ✍️ Caption Jualan · 📅 Kalender Konten 30 Hari · 🎬 Script Reels/TikTok · 🎯 Copy Iklan (PAS/AIDA/testimoni) · 💬 Template Balasan DM/WA
 - 📇 Bio/Profil Usaha · ⭐ Balasan Review · 🎁 Ide Promo & Diskon · 🏷️ Nama Produk & Tagline · 📢 Blast WhatsApp
 
+**🎨 Logo Maker** (halaman `/logo`):
+
+- AI bikin **3 konsep logo SVG** dari nama usaha + gaya (Minimalis, Playful, Elegan, Vintage, Bold)
+- Hasil vektor (tajam di ukuran apa pun), unduh `.svg` per konsep, atau "buat 3 konsep lain"
+- Aman: SVG di-sanitasi server (buang `<script>`/handler) **dan** di-render via `<img>` data-URL (browser menonaktifkan script)
+
 **Fitur platform:**
 
 - 🔁 **Refine 1-tap** — sesuaikan hasil: lebih pendek, tambah emoji, lebih formal/santai, atau buat versi lain
@@ -56,11 +62,18 @@ Buka http://localhost:3000.
 
 ```
 app/
-  page.tsx               → UI form + panel hasil (client, streaming fetch)
-  api/generate/route.ts  → POST: validasi input → messages.stream() via AI Gateway
-                           → ReadableStream teks ke browser
+  page.tsx               → Buat Konten: form + panel hasil (streaming)
+  logo/page.tsx          → Logo Maker: form + galeri 3 konsep SVG
+  api/generate/route.ts  → POST konten: generate & refine → messages.stream()
+  api/logo/route.ts      → POST logo: 3 SVG → extract + sanitasi
+  opengraph-image.tsx    → OG image dinamis (next/og) untuk preview link
+  icon.svg               → favicon / logo mark Saku Media
+components/
+  Nav.tsx                → tab Buat Konten / Logo Maker
 lib/
-  content-types.ts       → definisi 5 jenis konten + system prompt Bahasa Indonesia
+  content-types.ts       → 10 jenis konten + refine + system prompt (Bahasa Indonesia)
+  logo.ts                → prompt logo + extractSafeSvgs/sanitizeSvg (server)
+  logo-client.ts         → daftar gaya logo (client-safe)
 ```
 
 - System prompt di-cache dengan `cache_control: ephemeral` (hemat token antar request).
