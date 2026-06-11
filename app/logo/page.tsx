@@ -10,15 +10,19 @@ import {
 } from "@/lib/logo-client";
 
 interface LogoConcept {
-  philosophy: string;
-  svg: string;
+  philosophy?: string;
+  svg?: string; // vektor (Claude)
+  image?: string; // PNG data URL (Nano Banana)
 }
+
+type Engine = "svg" | "image";
 
 function svgToDataUrl(svg: string): string {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
 export default function LogoMaker() {
+  const [engine, setEngine] = useState<Engine>("svg");
   const [businessName, setBusinessName] = useState("");
   const [niche, setNiche] = useState<string>(NICHES_FALLBACK[0]);
   const [description, setDescription] = useState("");
@@ -38,7 +42,8 @@ export default function LogoMaker() {
     setLoading(true);
     setLogos([]);
     try {
-      const res = await fetch("/api/logo", {
+      const endpoint = engine === "image" ? "/api/logo-image" : "/api/logo";
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -64,19 +69,27 @@ export default function LogoMaker() {
     }
   }
 
-  function downloadSvg(svg: string, index: number) {
+  function downloadConcept(concept: LogoConcept, index: number) {
     const slug =
       (businessName.trim() || "logo")
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "") || "logo";
-    const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = `${slug}-logo-${index + 1}.svg`;
-    a.click();
-    URL.revokeObjectURL(url);
+    if (concept.svg) {
+      const blob = new Blob([concept.svg], {
+        type: "image/svg+xml;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      a.href = url;
+      a.download = `${slug}-logo-${index + 1}.svg`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } else if (concept.image) {
+      a.href = concept.image; // data URL
+      a.download = `${slug}-logo-${index + 1}.png`;
+      a.click();
+    }
   }
 
   return (
@@ -129,6 +142,37 @@ export default function LogoMaker() {
             <h2 className="font-display text-lg font-bold text-saku-900">
               Buat Logo
             </h2>
+
+            {/* Engine toggle */}
+            <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-cream p-1">
+              <button
+                type="button"
+                onClick={() => setEngine("svg")}
+                className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                  engine === "svg"
+                    ? "bg-saku-600 text-white shadow-sm"
+                    : "text-saku-900/70 hover:text-saku-900"
+                }`}
+              >
+                ✏️ Vektor (SVG)
+              </button>
+              <button
+                type="button"
+                onClick={() => setEngine("image")}
+                className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                  engine === "image"
+                    ? "bg-saku-600 text-white shadow-sm"
+                    : "text-saku-900/70 hover:text-saku-900"
+                }`}
+              >
+                🖼️ Gambar · Nano Banana
+              </button>
+            </div>
+            <p className="mt-1.5 text-xs text-saku-900/50">
+              {engine === "svg"
+                ? "Logo vektor + filosofi (Claude) — bisa diedit & skalakan tanpa batas."
+                : "Logo gambar PNG (Google Nano Banana) — lebih ilustratif, cek ejaan nama."}
+            </p>
 
             <label className="mt-4 block text-sm font-medium text-saku-900">
               Nama usaha
@@ -255,7 +299,9 @@ export default function LogoMaker() {
               {loading ? "Sedang mendesain logo…" : "🎨 Buatkan Logo"}
             </button>
             <p className="mt-2 text-center text-xs text-saku-900/50">
-              Hasil berupa file SVG (vektor) — tajam di ukuran berapa pun.
+              {engine === "svg"
+                ? "Hasil file SVG (vektor) — tajam di ukuran berapa pun."
+                : "Hasil file PNG dari Nano Banana — siap pakai di medsos."}
             </p>
           </form>
 
@@ -297,7 +343,11 @@ export default function LogoMaker() {
                       {/* SVG rendered via <img> → browser disables scripts (safe) */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={svgToDataUrl(concept.svg)}
+                        src={
+                          concept.svg
+                            ? svgToDataUrl(concept.svg)
+                            : concept.image
+                        }
                         alt={`Konsep logo ${i + 1}`}
                         className="h-full w-full object-contain"
                       />
@@ -311,10 +361,10 @@ export default function LogoMaker() {
                       </p>
                     )}
                     <button
-                      onClick={() => downloadSvg(concept.svg, i)}
+                      onClick={() => downloadConcept(concept, i)}
                       className="mt-3 w-full rounded-lg bg-saku-600 px-3 py-2 text-xs font-semibold text-white hover:bg-saku-700"
                     >
-                      ↓ Unduh SVG #{i + 1}
+                      ↓ Unduh {concept.svg ? "SVG" : "PNG"} #{i + 1}
                     </button>
                   </div>
                 ))}

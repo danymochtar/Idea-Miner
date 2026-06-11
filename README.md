@@ -17,7 +17,12 @@ Isi data usaha → pilih jenis konten → AI menghasilkan konten Bahasa Indonesi
 - Kualitas dinaikkan lewat **adaptive thinking + effort tinggi** (model "memikirkan" makna & komposisi dulu sebelum menggambar) — bisa pakai model paling pintar via `AI_LOGO_MODEL` (mis. `anthropic/claude-fable-5`)
 - Aman: SVG di-sanitasi server (buang `<script>`/handler) **dan** di-render via `<img>` data-URL (browser menonaktifkan script)
 
-> Kenapa SVG (bukan model gambar)? Logo butuh **vektor** (scalable, nama usaha tidak salah eja, bisa diedit). Model gambar (Flux/Imagen/Ideogram) menghasilkan raster yang lebih "cakep" tapi bukan logo siap pakai. Satu-satunya model gambar yang keluar SVG asli adalah Recraft V4 (API berbayar terpisah) — bisa diintegrasikan nanti bila perlu kualitas ilustratif.
+**Dua engine logo (bisa dipilih di UI):**
+
+- ✏️ **Vektor (SVG) — Claude:** keluar vektor + filosofi tiap konsep, bisa diedit & skalakan tanpa batas, nama usaha akurat. Pakai adaptive thinking + effort tinggi.
+- 🖼️ **Gambar (PNG) — Google "Nano Banana"** (`gemini-2.5-flash-image`): lebih ilustratif/artistik, hasil PNG siap medsos. Butuh `GEMINI_API_KEY` tersendiri. Catatan: model gambar kadang salah eja nama — selalu cek hasilnya.
+
+> Trade-off: vektor = siap pakai sebagai logo resmi (scalable, editable); gambar Nano Banana = lebih "cakep" tapi raster & ejaan bisa meleset. Sediakan keduanya, biar user pilih sesuai kebutuhan.
 
 **Fitur platform:**
 
