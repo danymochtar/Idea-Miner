@@ -3,10 +3,24 @@
 import { useEffect, useRef, useState } from "react";
 import {
   CONTENT_TYPES,
+  LANGUAGE_STYLES,
   NICHES,
+  PRESETS,
   TONES,
   type ContentTypeId,
+  type Preset,
 } from "@/lib/content-types";
+
+interface HistoryItem {
+  id: string;
+  ts: number;
+  businessName: string;
+  typeLabel: string;
+  output: string;
+}
+
+const HISTORY_KEY = "saku-history-v1";
+const ERROR_ONLY = /^\[[^\]]*\]$/; // a pure inline-error response (one bracketed line)
 
 export default function Home() {
   const [businessName, setBusinessName] = useState("");
@@ -14,25 +28,75 @@ export default function Home() {
   const [description, setDescription] = useState("");
   const [tone, setTone] = useState<string>(TONES[0]);
   const [contentType, setContentType] = useState<ContentTypeId>("caption");
+  const [language, setLanguage] = useState<string>(LANGUAGE_STYLES[0].id);
 
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
 
   const abortRef = useRef<AbortController | null>(null);
   const outputRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  // Stick the output panel to the bottom while streaming — but only if the user
-  // hasn't scrolled up to re-read earlier content.
+  // Load saved history once on mount.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(HISTORY_KEY);
+      if (raw) setHistory(JSON.parse(raw));
+    } catch {
+      /* ignore corrupt storage */
+    }
+  }, []);
+
+  // Stick the output panel to the bottom while streaming — unless the user
+  // scrolled up to re-read earlier content.
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || !loading) return;
-    const nearBottom =
-      el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
     if (nearBottom) el.scrollTop = el.scrollHeight;
   }, [output, loading]);
+
+  function applyPreset(p: Preset) {
+    setBusinessName(p.businessName);
+    setNiche(p.niche);
+    setDescription(p.description);
+    setTone(p.tone);
+    setContentType(p.contentType);
+    setLanguage(p.language);
+    setError(null);
+  }
+
+  function saveToHistory(text: string) {
+    const item: HistoryItem = {
+      id: crypto.randomUUID(),
+      ts: Date.now(),
+      businessName: businessName.trim() || "Tanpa nama",
+      typeLabel:
+        CONTENT_TYPES.find((c) => c.id === contentType)?.label ?? "Konten",
+      output: text,
+    };
+    setHistory((prev) => {
+      const next = [item, ...prev].slice(0, 15);
+      try {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+      } catch {
+        /* storage full / disabled — keep in-memory only */
+      }
+      return next;
+    });
+  }
+
+  function clearHistory() {
+    setHistory([]);
+    try {
+      localStorage.removeItem(HISTORY_KEY);
+    } catch {
+      /* ignore */
+    }
+  }
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -45,9 +109,9 @@ export default function Home() {
     const controller = new AbortController();
     abortRef.current = controller;
 
-    // On mobile, jump to the output panel so streaming is visible
     outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
 
+    let full = "";
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
@@ -58,6 +122,7 @@ export default function Home() {
           description,
           tone,
           contentType,
+          language,
         }),
         signal: controller.signal,
       });
@@ -73,10 +138,23 @@ export default function Home() {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        setOutput((prev) => prev + decoder.decode(value, { stream: true }));
+        full += decoder.decode(value, { stream: true });
+        setOutput(full);
+      }
+
+      const trimmed = full.trim();
+      if (ERROR_ONLY.test(trimmed)) {
+        // Server streamed only an inline error — surface it as an error, not content.
+        setError(trimmed.replace(/^\[|\]$/g, ""));
+        setOutput("");
+      } else if (trimmed) {
+        saveToHistory(full);
       }
     } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") return;
+      if (err instanceof DOMException && err.name === "AbortError") {
+        if (full.trim()) saveToHistory(full); // keep partial output user stopped
+        return;
+      }
       setError(err instanceof Error ? err.message : "Terjadi kesalahan.");
     } finally {
       setLoading(false);
@@ -98,13 +176,29 @@ export default function Home() {
     }
   }
 
+  function handleDownload(ext: "txt" | "md") {
+    const slug =
+      (businessName.trim() || "saku-konten")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "konten";
+    const blob = new Blob([output], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${slug}-${contentType}.${ext}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   const selectedType = CONTENT_TYPES.find((c) => c.id === contentType);
+  const hasOutput = output.length > 0 && !loading;
 
   return (
     <main>
       {/* Header */}
       <header className="bg-saku-900 text-white">
-        <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6 flex items-center justify-between">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-brand font-display text-xl font-bold text-saku-950">
               S
@@ -113,7 +207,7 @@ export default function Home() {
               <p className="font-display text-lg font-bold leading-tight">
                 Saku Media
               </p>
-              <p className="text-xs text-saku-100/80 leading-tight">
+              <p className="text-xs leading-tight text-saku-100/80">
                 AI Konten Engine
               </p>
             </div>
@@ -141,11 +235,30 @@ export default function Home() {
 
       {/* App */}
       <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-12">
+        {/* Presets */}
+        <div className="mb-6">
+          <p className="mb-2 text-sm font-medium text-saku-900">
+            🚀 Coba cepat (contoh usaha):
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {PRESETS.map((p) => (
+              <button
+                key={p.label}
+                type="button"
+                onClick={() => applyPreset(p)}
+                className="rounded-full border border-saku-900/15 bg-white px-3 py-1.5 text-xs font-medium text-saku-900 shadow-sm transition hover:border-saku-600 hover:bg-saku-50"
+              >
+                {p.emoji} {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="grid gap-6 lg:grid-cols-5">
           {/* Form */}
           <form
             onSubmit={handleGenerate}
-            className="lg:col-span-2 rounded-2xl border border-saku-900/10 bg-white p-5 shadow-sm sm:p-6"
+            className="rounded-2xl border border-saku-900/10 bg-white p-5 shadow-sm sm:p-6 lg:col-span-2"
           >
             <h2 className="font-display text-lg font-bold text-saku-900">
               Data Usaha
@@ -189,18 +302,35 @@ export default function Home() {
               />
             </label>
 
-            <label className="mt-4 block text-sm font-medium text-saku-900">
-              Tone konten
-              <select
-                value={tone}
-                onChange={(e) => setTone(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-saku-900/15 bg-cream px-3 py-2.5 text-sm outline-none focus:border-saku-600 focus:ring-2 focus:ring-saku-100"
-              >
-                {TONES.map((t) => (
-                  <option key={t}>{t}</option>
-                ))}
-              </select>
-            </label>
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <label className="block text-sm font-medium text-saku-900">
+                Tone konten
+                <select
+                  value={tone}
+                  onChange={(e) => setTone(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-saku-900/15 bg-cream px-3 py-2.5 text-sm outline-none focus:border-saku-600 focus:ring-2 focus:ring-saku-100"
+                >
+                  {TONES.map((t) => (
+                    <option key={t}>{t}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block text-sm font-medium text-saku-900">
+                Gaya bahasa
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-saku-900/15 bg-cream px-3 py-2.5 text-sm outline-none focus:border-saku-600 focus:ring-2 focus:ring-saku-100"
+                >
+                  {LANGUAGE_STYLES.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
 
             <p className="mt-5 text-sm font-medium text-saku-900">
               Jenis konten
@@ -239,7 +369,7 @@ export default function Home() {
           {/* Output */}
           <div
             ref={outputRef}
-            className="lg:col-span-3 flex min-h-[60vh] flex-col rounded-2xl border border-saku-900/10 bg-white shadow-sm"
+            className="flex min-h-[60vh] flex-col rounded-2xl border border-saku-900/10 bg-white shadow-sm lg:col-span-3"
           >
             <div className="flex items-center justify-between border-b border-saku-900/10 px-5 py-4 sm:px-6">
               <div>
@@ -252,7 +382,7 @@ export default function Home() {
                   </p>
                 )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap justify-end gap-2">
                 {loading && (
                   <button
                     onClick={handleStop}
@@ -261,13 +391,27 @@ export default function Home() {
                     ■ Stop
                   </button>
                 )}
-                {output && !loading && (
-                  <button
-                    onClick={handleCopy}
-                    className="rounded-lg bg-saku-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-saku-700"
-                  >
-                    {copied ? "✓ Tersalin!" : "⧉ Salin Semua"}
-                  </button>
+                {hasOutput && (
+                  <>
+                    <button
+                      onClick={() => handleDownload("txt")}
+                      className="rounded-lg border border-saku-900/15 px-3 py-1.5 text-xs font-semibold text-saku-900 hover:bg-saku-50"
+                    >
+                      ↓ .txt
+                    </button>
+                    <button
+                      onClick={() => handleDownload("md")}
+                      className="rounded-lg border border-saku-900/15 px-3 py-1.5 text-xs font-semibold text-saku-900 hover:bg-saku-50"
+                    >
+                      ↓ .md
+                    </button>
+                    <button
+                      onClick={handleCopy}
+                      className="rounded-lg bg-saku-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-saku-700"
+                    >
+                      {copied ? "✓ Tersalin!" : "⧉ Salin"}
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -298,7 +442,7 @@ export default function Home() {
                 </div>
               )}
               {output && (
-                <pre className="whitespace-pre-wrap break-words font-body text-sm leading-relaxed text-saku-950">
+                <pre className="font-body whitespace-pre-wrap break-words text-sm leading-relaxed text-saku-950">
                   {output}
                   {loading && (
                     <span className="ml-0.5 inline-block h-4 w-2 animate-pulse bg-amber-brand align-text-bottom" />
@@ -308,6 +452,56 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* History */}
+        {history.length > 0 && (
+          <div className="mt-8 rounded-2xl border border-saku-900/10 bg-white p-5 shadow-sm sm:p-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-lg font-bold text-saku-900">
+                🕘 Riwayat ({history.length})
+              </h2>
+              <button
+                onClick={clearHistory}
+                className="text-xs font-semibold text-red-600 hover:underline"
+              >
+                Hapus semua
+              </button>
+            </div>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {history.map((h) => (
+                <button
+                  key={h.id}
+                  type="button"
+                  onClick={() => {
+                    setOutput(h.output);
+                    setError(null);
+                    outputRef.current?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    });
+                  }}
+                  className="rounded-xl border border-saku-900/10 bg-cream px-4 py-3 text-left transition hover:border-saku-600"
+                >
+                  <p className="truncate text-sm font-semibold text-saku-900">
+                    {h.businessName}
+                  </p>
+                  <p className="text-xs text-saku-900/60">
+                    {h.typeLabel} ·{" "}
+                    {new Date(h.ts).toLocaleString("id-ID", {
+                      day: "numeric",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                  <p className="mt-1 line-clamp-2 text-xs text-saku-900/50">
+                    {h.output.slice(0, 120)}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Footer */}

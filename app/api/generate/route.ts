@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import {
   buildUserPrompt,
   CONTENT_TYPES,
+  LANGUAGE_STYLES,
   SYSTEM_PROMPT,
   type GenerateRequest,
 } from "@/lib/content-types";
@@ -52,7 +53,8 @@ export async function POST(req: Request) {
     return badRequest("Body harus berupa JSON.");
   }
 
-  const { businessName, niche, description, tone, contentType } = body;
+  const { businessName, niche, description, tone, contentType, language } =
+    body;
   if (!businessName?.trim()) return badRequest("Nama usaha wajib diisi.");
   if (!description?.trim()) return badRequest("Deskripsi usaha wajib diisi.");
   if (!CONTENT_TYPES.some((c) => c.id === contentType)) {
@@ -88,6 +90,9 @@ export async function POST(req: Request) {
           description: description.trim(),
           tone: tone?.trim() || "Santai & Friendly",
           contentType,
+          language: LANGUAGE_STYLES.some((l) => l.id === language)
+            ? language
+            : "santai",
         }),
       },
     ],

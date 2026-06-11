@@ -14,6 +14,45 @@ export const TONES = [
   "Elegan / Premium",
 ] as const;
 
+export interface LanguageStyle {
+  id: string;
+  label: string;
+  instruction: string;
+}
+
+export const LANGUAGE_STYLES: LanguageStyle[] = [
+  {
+    id: "santai",
+    label: "Indonesia Santai",
+    instruction:
+      "Gunakan Bahasa Indonesia sehari-hari yang santai dan akrab, seperti ngobrol dengan teman.",
+  },
+  {
+    id: "baku",
+    label: "Indonesia Formal",
+    instruction:
+      "Gunakan Bahasa Indonesia yang baku, sopan, dan profesional.",
+  },
+  {
+    id: "jaksel",
+    label: "Gaul Jaksel",
+    instruction:
+      "Gunakan gaya bahasa gaul anak Jakarta Selatan: sesekali campur istilah Inggris yang umum (which is, literally, prefer, worth it, vibes), tetap natural dan tidak berlebihan.",
+  },
+  {
+    id: "jawa",
+    label: "Campur Jawa",
+    instruction:
+      "Gunakan Bahasa Indonesia dengan sentuhan Bahasa Jawa yang ramah (mis. monggo, matur nuwun, rek, jos) secukupnya, cocok untuk pasar Jawa.",
+  },
+  {
+    id: "sunda",
+    label: "Campur Sunda",
+    instruction:
+      "Gunakan Bahasa Indonesia dengan sentuhan Bahasa Sunda yang ramah (mis. mangga, hatur nuhun, euy, cik) secukupnya, cocok untuk pasar Jawa Barat.",
+  },
+];
+
 export type ContentTypeId =
   | "caption"
   | "kalender"
@@ -95,7 +134,67 @@ export interface GenerateRequest {
   description: string;
   tone: string;
   contentType: ContentTypeId;
+  language: string;
 }
+
+export interface Preset {
+  label: string;
+  emoji: string;
+  businessName: string;
+  niche: string;
+  description: string;
+  tone: string;
+  contentType: ContentTypeId;
+  language: string;
+}
+
+// One-click demo examples — auto-fill the form for fast internal showcasing.
+export const PRESETS: Preset[] = [
+  {
+    label: "Kedai Kopi",
+    emoji: "☕",
+    businessName: "Kopi Senja",
+    niche: "Kuliner / F&B",
+    description:
+      "Kedai kopi kekinian dengan menu andalan kopi susu gula aren. Target anak muda & mahasiswa, harga terjangkau, suasana cozy buat nongkrong dan WFC.",
+    tone: "Lucu / Gen-Z",
+    contentType: "caption",
+    language: "jaksel",
+  },
+  {
+    label: "Online Shop Hijab",
+    emoji: "🧕",
+    businessName: "Hijab Aira",
+    niche: "Online Shop / E-commerce",
+    description:
+      "Toko online hijab voal premium motif eksklusif. Target wanita muslimah 20-40 tahun yang suka tampil rapi & adem dipakai seharian. Jualan via Instagram & WhatsApp.",
+    tone: "Santai & Friendly",
+    contentType: "kalender",
+    language: "santai",
+  },
+  {
+    label: "Agen Properti",
+    emoji: "🏡",
+    businessName: "Griya Asri Property",
+    niche: "Properti",
+    description:
+      "Agen properti perumahan cluster di pinggiran kota. Target keluarga muda yang cari rumah pertama, KPR DP ringan, lokasi dekat tol & sekolah.",
+    tone: "Elegan / Premium",
+    contentType: "iklan",
+    language: "baku",
+  },
+  {
+    label: "Coach Bisnis",
+    emoji: "🎤",
+    businessName: "Coach Bima",
+    niche: "Personal Brand / Coach",
+    description:
+      "Business coach untuk pemilik UMKM yang ingin scale-up lewat sistem & digital marketing. Jualan kelas online & mentoring 1-on-1.",
+    tone: "Profesional & Terpercaya",
+    contentType: "reels",
+    language: "santai",
+  },
+];
 
 export const SYSTEM_PROMPT = `Kamu adalah "Saku AI Konten Engine" — mesin konten dari Saku Media, agensi digital Indonesia yang membantu UMKM punya presence online yang kuat.
 
@@ -111,11 +210,15 @@ Aturan output:
 
 export function buildUserPrompt(req: GenerateRequest): string {
   const contentType = CONTENT_TYPES.find((c) => c.id === req.contentType);
+  const language = LANGUAGE_STYLES.find((l) => l.id === req.language);
   return `Data usaha:
 - Nama usaha: ${req.businessName}
 - Kategori: ${req.niche}
 - Deskripsi usaha & produk: ${req.description}
 - Tone yang diinginkan: ${req.tone}
+- Gaya bahasa: ${language?.label ?? "Indonesia Santai"} — ${
+    language?.instruction ?? ""
+  }
 
 Permintaan:
 ${contentType?.instruction ?? ""}`;

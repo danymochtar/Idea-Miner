@@ -10,6 +10,13 @@ Isi data usaha → pilih jenis konten → AI menghasilkan konten Bahasa Indonesi
 - 🎯 **Copy Iklan** — 3 variasi copy Meta/TikTok Ads (PAS, AIDA, testimoni)
 - 💬 **Template Balasan DM/WA** — 6 situasi chat penjualan
 
+Plus:
+
+- 🚀 **Preset 1-klik** — contoh usaha (Kedai Kopi, Online Shop, Properti, Coach) untuk demo cepat
+- 🗣️ **Gaya bahasa** — Indonesia santai/formal, gaul Jaksel, atau campur Jawa/Sunda
+- ↓ **Download** hasil sebagai `.txt` / `.md`, atau salin sekali klik
+- 🕘 **Riwayat** generate tersimpan di browser (localStorage), bisa dibuka lagi
+
 ## Tech Stack
 
 - **Next.js 15** (App Router) + **TypeScript**
